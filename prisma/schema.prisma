@@ -1,9 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,47 +10,277 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Collection {
-  id          Int     @id @default(autoincrement())
-  name        String  @unique
-  description String?
-  releaseYear Int
-
-  // Segundo: marcação da lista de dados da tabela dependente
-  cards Card[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("collections")
-}
-
-model Card {
-  id            Int     @id @default(autoincrement())
-  name          String  @unique
-  rarity        String
-  attackPoints  Int
-  defensePoints Int
-  imageUrl      String?
-
-  // Primeiro: configuração da tabela dependente
-  collectionId Int      
-  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("cards")
-}
+// ============================================
+// ANTERA CHAT - LinkedIn-like Social Network
+// ============================================
 
 model User {
-  id Int @id @default(autoincrement())
-  name String
-  email String @unique
-  password String
+  id              Int      @id @default(autoincrement())
+  email           String   @unique
+  password        String
+  name            String
+  headline        String?  // Ex: "Software Engineer at Google"
+  bio             String?
+  avatar          String?
+  coverImage      String?
+  location        String?
+  website         String?
+  phone           String?
+  isVerified      Boolean  @default(false)
   
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  // Profile completeness
+  profileViews    Int      @default(0)
+  
+  // Relacionamentos
+  posts           Post[]
+  comments        Comment[]
+  likes           Like[]
+  jobs            Job[]
+  
+  // Conexões
+  sentConnections     Connection[] @relation("ConnectionSender")
+  receivedConnections Connection[] @relation("ConnectionReceiver")
+  
+  // Mensagens
+  sentMessages     Message[] @relation("MessageSender")
+  receivedMessages Message[] @relation("MessageReceiver")
+  
+  // Conversas
+  conversationsAsUser1 Conversation[] @relation("ConversationUser1")
+  conversationsAsUser2 Conversation[] @relation("ConversationUser2")
+  
+  // Experiência profissional
+  experiences     Experience[]
+  educations      Education[]
+  skills          UserSkill[]
+  
+  // Empresa associada
+  companyId       Int?
+  company         Company?  @relation(fields: [companyId], references: [id])
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@map("users")
+}
+
+model Company {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  logo        String?
+  website     String?
+  industry    String?
+  size        String?
+  location    String?
+  
+  employees   User[]
+  jobs        Job[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("companies")
+}
+
+model Post {
+  id          Int       @id @default(autoincrement())
+  content     String
+  imageUrl    String?
+  videoUrl    String?
+  
+  authorId    Int
+  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  
+  comments    Comment[]
+  likes       Like[]
+  
+  viewsCount  Int       @default(0)
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("posts")
+}
+
+model Comment {
+  id          Int      @id @default(autoincrement())
+  content     String
+  
+  postId      Int
+  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  authorId    Int
+  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("comments")
+}
+
+model Like {
+  id        Int      @id @default(autoincrement())
+  
+  postId    Int
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  
+  @@unique([postId, userId])
+  @@map("likes")
+}
+
+model Job {
+  id              Int       @id @default(autoincrement())
+  title           String
+  description     String
+  location        String
+  jobType         String    // Full-time, Part-time, Contract, Internship
+  workplaceType   String    // Remote, Hybrid, On-site
+  salaryRange     String?
+  requirements    String?   // JSON string com array de requisitos
+  benefits        String?   // JSON string com array de benefícios
+  
+  companyId       Int
+  company         Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  postedById      Int
+  postedBy        User      @relation(fields: [postedById], references: [id])
+  
+  isActive        Boolean   @default(true)
+  applicantsCount Int       @default(0)
+  viewsCount      Int       @default(0)
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  expiresAt       DateTime?
+
+  @@map("jobs")
+}
+
+model Connection {
+  id          Int      @id @default(autoincrement())
+  
+  senderId    Int
+  sender      User     @relation("ConnectionSender", fields: [senderId], references: [id], onDelete: Cascade)
+  
+  receiverId  Int
+  receiver    User     @relation("ConnectionReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  
+  status      String   @default("pending") // pending, accepted, rejected
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([senderId, receiverId])
+  @@map("connections")
+}
+
+model Conversation {
+  id          Int       @id @default(autoincrement())
+  
+  user1Id     Int
+  user1       User      @relation("ConversationUser1", fields: [user1Id], references: [id], onDelete: Cascade)
+  
+  user2Id     Int
+  user2       User      @relation("ConversationUser2", fields: [user2Id], references: [id], onDelete: Cascade)
+  
+  messages    Message[]
+  
+  lastMessageAt DateTime?
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@unique([user1Id, user2Id])
+  @@map("conversations")
+}
+
+model Message {
+  id             Int          @id @default(autoincrement())
+  content        String
+  
+  conversationId Int
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  
+  senderId       Int
+  sender         User         @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  
+  receiverId     Int
+  receiver       User         @relation("MessageReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  
+  isRead         Boolean      @default(false)
+  
+  createdAt      DateTime     @default(now())
+
+  @@map("messages")
+}
+
+model Experience {
+  id          Int      @id @default(autoincrement())
+  title       String
+  companyName String
+  location    String?
+  description String?
+  startDate   DateTime
+  endDate     DateTime?
+  isCurrent   Boolean  @default(false)
+  
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("experiences")
+}
+
+model Education {
+  id          Int      @id @default(autoincrement())
+  school      String
+  degree      String
+  fieldOfStudy String?
+  startDate   DateTime
+  endDate     DateTime?
+  description String?
+  
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("educations")
+}
+
+model Skill {
+  id          Int         @id @default(autoincrement())
+  name        String      @unique
+  
+  users       UserSkill[]
+  
+  createdAt   DateTime    @default(now())
+
+  @@map("skills")
+}
+
+model UserSkill {
+  id          Int      @id @default(autoincrement())
+  
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  skillId     Int
+  skill       Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  
+  endorsements Int     @default(0)
+  
+  createdAt   DateTime @default(now())
+  
+  @@unique([userId, skillId])
+  @@map("user_skills")
 }

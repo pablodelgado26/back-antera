@@ -1,23 +1,23 @@
 {
-  "name": "api-boilerplate",
+  "name": "antera-chat-backend",
   "version": "1.0.0",
-  "description": "Projeto base de uma API com MVC",
+  "description": "Backend API para Antera Chat - Rede Social Profissional",
   "keywords": [
     "nodejs",
     "javascript",
-    "prisma"
+    "prisma",
+    "express",
+    "postgresql",
+    "jwt",
+    "social-network"
   ],
   "license": "MIT",
-  "author": "Pablo Delgado",
+  "author": "Antera Chat Team",
   "type": "module",
   "main": "src/server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon src/server.js",
-    "prisma:seed": "node prisma/seed/seed.js"
-  },
-  "prisma": {
-    "seed": "node prisma/seed/seed.js"
+    "start": "node src/server.js"
   },
   "dependencies": {
     "@prisma/client": "^6.5.0",

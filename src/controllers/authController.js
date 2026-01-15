@@ -1,13 +1,25 @@
-import UserModel from "../models/userModel.js";
+import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+
+const prisma = new PrismaClient();
 
 class AuthController {
 
     // Listar todos os usuários
     async getAllUsers(req, res) {
         try {
-            const users = await UserModel.findAll();
+            const users = await prisma.user.findMany({
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    headline: true,
+                    avatar: true,
+                    location: true,
+                    createdAt: true,
+                }
+            });
             res.json(users);
         } catch (error) {
             console.error("Erro ao listar usuários:", error);
@@ -26,7 +38,9 @@ class AuthController {
             }
 
             //Verificar se o usuário ja existe 
-            const userExists = await UserModel.findByEmail(email)
+            const userExists = await prisma.user.findUnique({
+                where: { email }
+            });
 
             if (userExists) {
                 return res.status(400).json({ error: "Este email já está em uso!" })
@@ -35,19 +49,42 @@ class AuthController {
             //hash da senha
             const hashedPassword = await bcrypt.hash(password, 10);
 
-            //Criar o objeto do usuário
-            const data = {
-                name,
-                email,
-                password: hashedPassword,
-            };
-
             //Criar usuário 
-            const user = await UserModel.create(data);
+            const user = await prisma.user.create({
+                data: {
+                    name,
+                    email,
+                    password: hashedPassword,
+                },
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    headline: true,
+                    avatar: true,
+                    createdAt: true,
+                }
+            });
+
+            //Gerar Token JWT
+            const token = jwt.sign(
+                {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
+                },
+                process.env.JWT_SECRET,
+                {
+                    expiresIn: "24h",
+                }
+            );
 
             return res.status(201).json({
                 message: "Usuário criado com sucesso!",
-                user,
+                data: {
+                    token,
+                    user,
+                },
             });
         } catch (error) {
             console.error("Erro ao criar novo usuario: ", error)
@@ -65,13 +102,16 @@ class AuthController {
             }
 
             //Verificar se o usuário existe 
-            const userExists = await UserModel.findByEmail(email)
-            if (!userExists) {
+            const user = await prisma.user.findUnique({
+                where: { email }
+            });
+            
+            if (!user) {
                 return res.status(401).json({ error: "Credenciais inválidas!" })
             }
 
             //Verificar senha 
-            const isPasswordValid = await bcrypt.compare(password, userExists.password);
+            const isPasswordValid = await bcrypt.compare(password, user.password);
             if (!isPasswordValid) {
                 return res.status(401).json({ error: "Credenciais inválidas!" })
             }
@@ -79,9 +119,9 @@ class AuthController {
             //Gerar Token JWT
             const token = jwt.sign(
                 {
-                    id: userExists.id,
-                    name: userExists.name,
-                    email: userExists.email,
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
                 },
                 process.env.JWT_SECRET,
                 {
@@ -89,10 +129,15 @@ class AuthController {
                 }
             );
 
+            // Remover senha do retorno
+            const { password: _, ...userWithoutPassword } = user;
+
             return res.json({
                 message: "Login realizado com sucesso!",
-                token,
-                userExists,
+                data: {
+                    token,
+                    user: userWithoutPassword,
+                },
             });
         } catch (error) {
             console.error("Erro ao fazer login: ", error)
