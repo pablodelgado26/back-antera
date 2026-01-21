@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -6,14 +6,14 @@ const prisma = new PrismaClient();
 export const createPost = async (req, res) => {
   try {
     const { content, imageUrl, videoUrl } = req.body;
-    const userId = req.user.userId;
+    const userId = req.userId;
 
     const post = await prisma.post.create({
       data: {
         content,
         imageUrl,
         videoUrl,
-        authorId: userId
+        authorId: userId,
       },
       include: {
         author: {
@@ -21,12 +21,12 @@ export const createPost = async (req, res) => {
             id: true,
             name: true,
             avatar: true,
-            headline: true
-          }
+            headline: true,
+          },
         },
         likes: true,
-        comments: true
-      }
+        comments: true,
+      },
     });
 
     res.status(201).json({ success: true, data: post });
@@ -44,21 +44,21 @@ export const getAllPosts = async (req, res) => {
     const posts = await prisma.post.findMany({
       skip: parseInt(skip),
       take: parseInt(limit),
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       include: {
         author: {
           select: {
             id: true,
             name: true,
             avatar: true,
-            headline: true
-          }
+            headline: true,
+          },
         },
         likes: {
           select: {
             id: true,
-            userId: true
-          }
+            userId: true,
+          },
         },
         comments: {
           include: {
@@ -66,20 +66,20 @@ export const getAllPosts = async (req, res) => {
               select: {
                 id: true,
                 name: true,
-                avatar: true
-              }
-            }
+                avatar: true,
+              },
+            },
           },
-          orderBy: { createdAt: 'desc' },
-          take: 3
+          orderBy: { createdAt: "desc" },
+          take: 3,
         },
         _count: {
           select: {
             likes: true,
-            comments: true
-          }
-        }
-      }
+            comments: true,
+          },
+        },
+      },
     });
 
     const total = await prisma.post.count();
@@ -91,8 +91,8 @@ export const getAllPosts = async (req, res) => {
         page: parseInt(page),
         limit: parseInt(limit),
         total,
-        totalPages: Math.ceil(total / limit)
-      }
+        totalPages: Math.ceil(total / limit),
+      },
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -114,8 +114,8 @@ export const getPostById = async (req, res) => {
             name: true,
             avatar: true,
             headline: true,
-            bio: true
-          }
+            bio: true,
+          },
         },
         likes: {
           select: {
@@ -125,10 +125,10 @@ export const getPostById = async (req, res) => {
               select: {
                 id: true,
                 name: true,
-                avatar: true
-              }
-            }
-          }
+                avatar: true,
+              },
+            },
+          },
         },
         comments: {
           include: {
@@ -136,19 +136,19 @@ export const getPostById = async (req, res) => {
               select: {
                 id: true,
                 name: true,
-                avatar: true
-              }
-            }
+                avatar: true,
+              },
+            },
           },
-          orderBy: { createdAt: 'desc' }
+          orderBy: { createdAt: "desc" },
         },
         _count: {
           select: {
             likes: true,
-            comments: true
-          }
-        }
-      }
+            comments: true,
+          },
+        },
+      },
     });
 
     res.json({ success: true, data: post });
@@ -166,13 +166,13 @@ export const updatePost = async (req, res) => {
 
     // Verificar se o usuário é o autor
     const existingPost = await prisma.post.findUnique({
-      where: { id: parseInt(id) }
+      where: { id: parseInt(id) },
     });
 
     if (!existingPost || existingPost.authorId !== userId) {
-      return res.status(403).json({ 
-        success: false, 
-        error: 'Não autorizado' 
+      return res.status(403).json({
+        success: false,
+        error: "Não autorizado",
       });
     }
 
@@ -185,10 +185,10 @@ export const updatePost = async (req, res) => {
             id: true,
             name: true,
             avatar: true,
-            headline: true
-          }
-        }
-      }
+            headline: true,
+          },
+        },
+      },
     });
 
     res.json({ success: true, data: post });
@@ -204,21 +204,21 @@ export const deletePost = async (req, res) => {
     const userId = req.user.userId;
 
     const existingPost = await prisma.post.findUnique({
-      where: { id: parseInt(id) }
+      where: { id: parseInt(id) },
     });
 
     if (!existingPost || existingPost.authorId !== userId) {
-      return res.status(403).json({ 
-        success: false, 
-        error: 'Não autorizado' 
+      return res.status(403).json({
+        success: false,
+        error: "Não autorizado",
       });
     }
 
     await prisma.post.delete({
-      where: { id: parseInt(id) }
+      where: { id: parseInt(id) },
     });
 
-    res.json({ success: true, message: 'Post deletado com sucesso' });
+    res.json({ success: true, message: "Post deletado com sucesso" });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -234,14 +234,14 @@ export const toggleLike = async (req, res) => {
       where: {
         postId_userId: {
           postId: parseInt(id),
-          userId: userId
-        }
-      }
+          userId: userId,
+        },
+      },
     });
 
     if (existingLike) {
       await prisma.like.delete({
-        where: { id: existingLike.id }
+        where: { id: existingLike.id },
       });
       return res.json({ success: true, liked: false });
     }
@@ -249,8 +249,8 @@ export const toggleLike = async (req, res) => {
     await prisma.like.create({
       data: {
         postId: parseInt(id),
-        userId: userId
-      }
+        userId: userId,
+      },
     });
 
     res.json({ success: true, liked: true });
@@ -270,17 +270,17 @@ export const addComment = async (req, res) => {
       data: {
         content,
         postId: parseInt(id),
-        authorId: userId
+        authorId: userId,
       },
       include: {
         author: {
           select: {
             id: true,
             name: true,
-            avatar: true
-          }
-        }
-      }
+            avatar: true,
+          },
+        },
+      },
     });
 
     res.status(201).json({ success: true, data: comment });
@@ -296,21 +296,21 @@ export const deleteComment = async (req, res) => {
     const userId = req.user.userId;
 
     const comment = await prisma.comment.findUnique({
-      where: { id: parseInt(commentId) }
+      where: { id: parseInt(commentId) },
     });
 
     if (!comment || comment.authorId !== userId) {
-      return res.status(403).json({ 
-        success: false, 
-        error: 'Não autorizado' 
+      return res.status(403).json({
+        success: false,
+        error: "Não autorizado",
       });
     }
 
     await prisma.comment.delete({
-      where: { id: parseInt(commentId) }
+      where: { id: parseInt(commentId) },
     });
 
-    res.json({ success: true, message: 'Comentário deletado' });
+    res.json({ success: true, message: "Comentário deletado" });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }

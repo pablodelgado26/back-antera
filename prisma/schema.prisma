@@ -135,29 +135,32 @@ model Like {
 }
 
 model Job {
-  id              Int       @id @default(autoincrement())
-  title           String
-  description     String
-  location        String
-  jobType         String    // Full-time, Part-time, Contract, Internship
-  workplaceType   String    // Remote, Hybrid, On-site
-  salaryRange     String?
-  requirements    String?   // JSON string com array de requisitos
-  benefits        String?   // JSON string com array de benefícios
+  id                      Int              @id @default(autoincrement())
+  title                   String
+  description             String
+  location                String
+  jobType                 String           // Full-time, Part-time, Contract, Internship
+  workplaceType           String           // Remote, Hybrid, On-site
+  salaryRange             String?
+  requirements            String?          // JSON string com array de requisitos
+  benefits                String?          // JSON string com array de benefícios
+  externalApplicationUrl  String?          // Link externo para candidatura
   
-  companyId       Int
-  company         Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId               Int?
+  company                 Company?         @relation(fields: [companyId], references: [id], onDelete: Cascade)
   
-  postedById      Int
-  postedBy        User      @relation(fields: [postedById], references: [id])
+  postedById              Int
+  postedBy                User             @relation(fields: [postedById], references: [id])
   
-  isActive        Boolean   @default(true)
-  applicantsCount Int       @default(0)
-  viewsCount      Int       @default(0)
+  applications            JobApplication[]
   
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  expiresAt       DateTime?
+  isActive                Boolean          @default(true)
+  applicantsCount         Int              @default(0)
+  viewsCount              Int              @default(0)
+  
+  createdAt               DateTime         @default(now())
+  updatedAt               DateTime         @updatedAt
+  expiresAt               DateTime?
 
   @@map("jobs")
 }
@@ -283,4 +286,31 @@ model UserSkill {
   
   @@unique([userId, skillId])
   @@map("user_skills")
+}
+
+model JobApplication {
+  id              Int      @id @default(autoincrement())
+  
+  jobId           Int
+  job             Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  
+  // Dados do candidato
+  name            String
+  email           String
+  phone           String
+  resumeUrl       String?  // URL do currículo (pode ser armazenado em cloud storage)
+  
+  // Formação acadêmica
+  education       String   // JSON string com formações
+  
+  // Status
+  status          String   @default("pending") // pending, reviewing, accepted, rejected
+  
+  // Notas do recrutador
+  notes           String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("job_applications")
 }

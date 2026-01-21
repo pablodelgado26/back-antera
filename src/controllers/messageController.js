@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 // Buscar ou criar conversa
 export const getOrCreateConversation = async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.userId;
     const { otherUserId } = req.params;
     const otherId = parseInt(otherUserId);
 
@@ -80,7 +80,7 @@ export const getOrCreateConversation = async (req, res) => {
 // Listar conversas do usuário
 export const getUserConversations = async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.userId;
 
     const conversations = await prisma.conversation.findMany({
       where: {
@@ -145,7 +145,7 @@ export const getUserConversations = async (req, res) => {
 // Enviar mensagem
 export const sendMessage = async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.userId;
     const { conversationId } = req.params;
     const { content, receiverId } = req.body;
 
@@ -182,7 +182,7 @@ export const sendMessage = async (req, res) => {
 // Buscar mensagens de uma conversa
 export const getConversationMessages = async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.userId;
     const { conversationId } = req.params;
     const { page = 1, limit = 50 } = req.query;
     const skip = (page - 1) * limit;
@@ -235,7 +235,7 @@ export const getConversationMessages = async (req, res) => {
 // Marcar mensagens como lidas
 export const markAsRead = async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.userId;
     const { conversationId } = req.params;
 
     await prisma.message.updateMany({
@@ -256,7 +256,7 @@ export const markAsRead = async (req, res) => {
 // Contador de mensagens não lidas
 export const getUnreadCount = async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.userId;
 
     const count = await prisma.message.count({
       where: {

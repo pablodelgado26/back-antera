@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 // Enviar solicitação de conexão
 export const sendConnectionRequest = async (req, res) => {
   try {
-    const senderId = req.user.userId;
+    const senderId = req.userId;
     const { receiverId } = req.body;
 
     // Verificar se já existe conexão
@@ -60,7 +60,7 @@ export const sendConnectionRequest = async (req, res) => {
 // Aceitar solicitação
 export const acceptConnection = async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.userId;
     const { id } = req.params;
 
     const connection = await prisma.connection.findUnique({
@@ -106,7 +106,7 @@ export const acceptConnection = async (req, res) => {
 // Rejeitar solicitação
 export const rejectConnection = async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.userId;
     const { id } = req.params;
 
     const connection = await prisma.connection.findUnique({
@@ -133,7 +133,7 @@ export const rejectConnection = async (req, res) => {
 // Listar conexões do usuário
 export const getUserConnections = async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.userId;
     const { status = 'accepted' } = req.query;
 
     const connections = await prisma.connection.findMany({
@@ -185,7 +185,7 @@ export const getUserConnections = async (req, res) => {
 // Listar solicitações pendentes recebidas
 export const getPendingRequests = async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.userId;
 
     const requests = await prisma.connection.findMany({
       where: {
@@ -215,7 +215,7 @@ export const getPendingRequests = async (req, res) => {
 // Remover conexão
 export const removeConnection = async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.userId;
     const { id } = req.params;
 
     const connection = await prisma.connection.findUnique({
@@ -242,7 +242,7 @@ export const removeConnection = async (req, res) => {
 // Verificar status de conexão entre dois usuários
 export const checkConnectionStatus = async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.userId;
     const { otherUserId } = req.params;
 
     const connection = await prisma.connection.findFirst({
